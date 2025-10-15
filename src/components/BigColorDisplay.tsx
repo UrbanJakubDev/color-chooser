@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ColorCombination } from "../App";
-import ColorPicker from "./ColourPicker";
 import { useAppContext } from "../contexts/AppContext";
+import { ColorPaletteItem } from "../lib/colorPalette";
 
 interface BigColorDisplayProps {
   handleDrop: (e: React.DragEvent, type: "miska" | "telo" | "vase") => void;
@@ -18,38 +18,55 @@ export default function BigColorDisplay({
 }: BigColorDisplayProps) {
   const { selectedProduct, selectedCombination, selectedVaseColor } =
     useAppContext();
-  const [showColorPicker, setShowColorPicker] = useState<
-    "miska" | "telo" | "vase" | null
-  >(null);
+  const [colorPalette, setColorPalette] = useState<ColorPaletteItem[]>([]);
+
+  useEffect(() => {
+    // Načíst barvy palety z localStorage
+    const storedPalette = localStorage.getItem("paletteColors");
+    if (storedPalette) {
+      setColorPalette(JSON.parse(storedPalette));
+    }
+  }, []);
 
   // Pomocné funkce pro získání správných hodnot
   const getColorValue = () => {
     if (kind === "vase") {
-      return selectedVaseColor.hex;
+      return selectedVaseColor?.hex || "#FFFFFF";
     }
     return kind === "miska"
-      ? selectedCombination.hexMiska
-      : selectedCombination.hexTelo;
+      ? selectedCombination?.hexMiska || "#FFFFFF"
+      : selectedCombination?.hexTelo || "#FFFFFF";
   };
 
   const getRgbValue = () => {
     if (kind === "vase") {
-      return selectedVaseColor.rgb.join(", ");
+      return selectedVaseColor?.rgb.join(", ") || "255, 255, 255";
     }
     const rgb =
       kind === "miska"
-        ? selectedCombination.rgbMiska
-        : selectedCombination.rgbTelo;
-    return rgb.join(", ");
+        ? selectedCombination?.rgbMiska
+        : selectedCombination?.rgbTelo;
+    return rgb?.join(", ") || "255, 255, 255";
   };
 
   const getColorName = () => {
     if (kind === "vase") {
-      return selectedVaseColor.name;
+      return selectedVaseColor?.name || "";
     }
-    return kind === "miska"
-      ? selectedCombination.miska
-      : selectedCombination.telo;
+
+    const currentHex =
+      kind === "miska"
+        ? selectedCombination?.hexMiska
+        : selectedCombination?.hexTelo;
+
+    if (currentHex) {
+      const colorInPalette = colorPalette.find(
+        (color) => color.hex === currentHex
+      );
+      return colorInPalette ? colorInPalette.name : "";
+    }
+
+    return "";
   };
 
   const getLabel = () => {
@@ -64,14 +81,8 @@ export default function BigColorDisplay({
   };
 
   const handleColorClick = () => {
-    setShowColorPicker(showColorPicker === kind ? null : kind);
-  };
-
-  const handleColorChange = (
-    type: "miska" | "telo" | "vase",
-    color: string
-  ) => {
-    onColorChange(type, color);
+    // Color picker je vypnutý - barvy se mění pouze přes drag & drop z palety
+    // setShowColorPicker(showColorPicker === kind ? null : kind);
   };
 
   return (
@@ -88,17 +99,10 @@ export default function BigColorDisplay({
       <div className="space-y-1">
         <p className="font-mono text-sm text-gray-600">{getColorValue()}</p>
         <p className="text-sm text-gray-500">RGB: {getRgbValue()}</p>
-        <p className="text-sm text-gray-500">{getColorName()}</p>
+        {getColorName() && (
+          <p className="text-sm text-gray-500">{getColorName()}</p>
+        )}
       </div>
-
-      {/* Color picker */}
-      <ColorPicker
-        showColorPicker={showColorPicker}
-        selectedCombination={selectedCombination}
-        selectedProduct={selectedProduct}
-        onColorChange={handleColorChange}
-        onClose={() => setShowColorPicker(null)}
-      />
     </div>
   );
 }

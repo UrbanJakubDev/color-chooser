@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model PotColor {
+  id          Int      @id @default(autoincrement())
+  name        String
+  hex         String
+  rgb         String   // JSON string for SQLite compatibility
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  @@map("pot_colors")
+}
+
+model VaseColor {
+  id          Int      @id @default(autoincrement())
+  name        String
+  hex         String
+  rgb         String   // JSON string for SQLite compatibility
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  @@map("vase_colors")
+}
+
+model ColorCombination {
+  id        Int      @id @default(autoincrement())
+  tema      String
+  miska     String
+  telo      String
+  hexMiska  String
+  hexTelo   String
+  rgbMiska  String   // JSON string for SQLite compatibility
+  rgbTelo   String   // JSON string for SQLite compatibility
+  userId    String?
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  @@map("color_combinations")
+}
+
+model PaletteColor {
+  id        Int      @id @default(autoincrement())
+  hex       String
+  name      String   // Povinné pole pro název barvy
+  createdAt DateTime @default(now())
+  
+  @@map("palette_colors")
+}
