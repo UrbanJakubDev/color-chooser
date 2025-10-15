@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { colorPalette } from "../src/lib/colorPalette";
 
 const prisma = new PrismaClient();
 
@@ -154,44 +155,9 @@ async function main() {
   }
 
   // Seed Palette Colors
-  const paletteColors = [
-    "#D3D3D3",
-    "#003E33",
-    "#CC5500",
-    "#694931",
-    "#F5F5DC",
-    "#D4A017",
-    "#B85C38",
-    "#004D40",
-    "#800020",
-    "#36454F",
-    "#E3BC3F",
-    "#222222",
-    "#B87333",
-    "#5F456E",
-    "#FF6B6B",
-    "#4ECDC4",
-    "#45B7D1",
-    "#96CEB4",
-    "#FFEAA7",
-    "#DDA0DD",
-    "#98D8C8",
-    "#F7DC6F",
-    "#BB8FCE",
-    "#85C1E9",
-    "#F8C471",
-    "#82E0AA",
-    "#F1948A",
-    "#D7BDE2",
-    "#A9DFBF",
-  ];
-
-  for (const hex of paletteColors) {
+  for (const color of colorPalette) {
     await prisma.paletteColor.create({
-      data: {
-        hex,
-        name: `Color ${hex}`,
-      },
+      data: color,
     });
   }
 

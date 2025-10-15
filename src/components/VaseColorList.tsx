@@ -9,65 +9,6 @@ interface VaseColor {
   description: string;
 }
 
-const initialVaseColors: VaseColor[] = [
-  {
-    id: "1",
-    name: "Klasická Bílá",
-    hex: "#FFFFFF",
-    rgb: [255, 255, 255],
-    description: "Čistá bílá pro minimalistický vzhled",
-  },
-  {
-    id: "2",
-    name: "Elegantní Černá",
-    hex: "#2C2C2C",
-    rgb: [44, 44, 44],
-    description: "Hluboká černá pro moderní design",
-  },
-  {
-    id: "3",
-    name: "Teplá Terakota",
-    hex: "#B85C38",
-    rgb: [184, 92, 56],
-    description: "Přírodní terakotová barva",
-  },
-  {
-    id: "4",
-    name: "Měkká Krémová",
-    hex: "#F5F5DC",
-    rgb: [245, 245, 220],
-    description: "Jemná krémová pro útulný prostor",
-  },
-  {
-    id: "5",
-    name: "Sytá Bordó",
-    hex: "#800020",
-    rgb: [128, 0, 32],
-    description: "Bohatá bordó pro luxusní vzhled",
-  },
-  {
-    id: "6",
-    name: "Přírodní Hnědá",
-    hex: "#8B4513",
-    rgb: [139, 69, 19],
-    description: "Zemité hnědé tóny",
-  },
-  {
-    id: "7",
-    name: "Světle Šedá",
-    hex: "#D3D3D3",
-    rgb: [211, 211, 211],
-    description: "Neutrální šedá pro univerzální použití",
-  },
-  {
-    id: "8",
-    name: "Tmavě Modrá",
-    hex: "#191970",
-    rgb: [25, 25, 112],
-    description: "Hluboká modř pro elegantní kontrast",
-  },
-];
-
 interface VaseColorListProps {
   selectedVaseColor: VaseColor;
   onVaseColorSelect: (color: VaseColor) => void;
@@ -77,7 +18,7 @@ export default function VaseColorList({
   selectedVaseColor,
   onVaseColorSelect,
 }: VaseColorListProps) {
-  const [vaseColors, setVaseColors] = useState<VaseColor[]>(initialVaseColors);
+  const { vaseColors, setVaseColors } = useAppContext();
   const [showAddForm, setShowAddForm] = useState(false);
   const [newColor, setNewColor] = useState({
     name: "",
@@ -161,8 +102,8 @@ export default function VaseColorList({
   };
 
   const resetToDefault = () => {
-    setVaseColors(initialVaseColors);
-    onVaseColorSelect(initialVaseColors[0]);
+    // Reset na prázdné pole - barvy se načtou z databáze
+    setVaseColors([]);
     localStorage.removeItem("vaseColors");
   };
 

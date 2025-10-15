@@ -53,7 +53,7 @@ model ColorCombination {
 model PaletteColor {
   id        Int      @id @default(autoincrement())
   hex       String
-  name      String?
+  name      String   // Povinné pole pro název barvy
   createdAt DateTime @default(now())
   
   @@map("palette_colors")

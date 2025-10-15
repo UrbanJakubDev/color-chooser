@@ -7,7 +7,7 @@ import React, {
   ReactNode,
   useEffect,
 } from "react";
-import { ColorCombination, VaseColor } from "@/types";
+import { ColorCombination, VaseColor } from "../types";
 
 interface AppContextType {
   selectedCombination: ColorCombination | null;
@@ -20,6 +20,7 @@ interface AppContextType {
   setSelectedVaseColor: (color: VaseColor) => void;
   potColors: any[];
   vaseColors: VaseColor[];
+  setVaseColors: (colors: VaseColor[]) => void;
   loading: boolean;
 }
 
@@ -42,58 +43,51 @@ export function AppProvider({ children }: AppProviderProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // For now, use mock data until API routes are implemented
-    const mockCombinations: ColorCombination[] = [
-      {
-        id: "1",
-        miska: "Mramorová",
-        telo: "Hluboká Tmavě Zelená (Jedlová)",
-        hexMiska: "#D3D3D3",
-        hexTelo: "#003E33",
-        rgbMiska: [211, 211, 211],
-        rgbTelo: [0, 62, 51],
-        tema: "Elegance Lesa",
-      },
-      {
-        id: "2",
-        miska: "Mramorová",
-        telo: "Spálená Oranžová / Terakota",
-        hexMiska: "#D3D3D3",
-        hexTelo: "#CC5500",
-        rgbMiska: [211, 211, 211],
-        rgbTelo: [204, 85, 0],
-        tema: "Klasický Podzim",
-      },
-    ];
+    const loadData = async () => {
+      try {
+        setLoading(true);
 
-    const mockVaseColors: VaseColor[] = [
-      {
-        id: "1",
-        name: "Klasická Bílá",
-        hex: "#FFFFFF",
-        rgb: [255, 255, 255],
-        description: "Čistá bílá pro minimalistický vzhled",
-      },
-      {
-        id: "2",
-        name: "Elegantní Černá",
-        hex: "#2C2C2C",
-        rgb: [44, 44, 44],
-        description: "Hluboká černá pro moderní design",
-      },
-    ];
+        // Načíst kombinace barev
+        const combinationsResponse = await fetch("/api/combinations");
+        if (combinationsResponse.ok) {
+          const combinationsData = await combinationsResponse.json();
+          setCombinations(combinationsData);
+          if (combinationsData.length > 0) {
+            setSelectedCombination(combinationsData[0]);
+          }
+        }
 
-    setCombinations(mockCombinations);
-    setVaseColors(mockVaseColors);
+        // Načíst barvy váží
+        const vaseColorsResponse = await fetch("/api/vase-colors");
+        if (vaseColorsResponse.ok) {
+          const vaseColorsData = await vaseColorsResponse.json();
+          setVaseColors(vaseColorsData);
+          if (vaseColorsData.length > 0) {
+            setSelectedVaseColor(vaseColorsData[0]);
+          }
+        }
 
-    if (mockCombinations.length > 0) {
-      setSelectedCombination(mockCombinations[0]);
-    }
-    if (mockVaseColors.length > 0) {
-      setSelectedVaseColor(mockVaseColors[0]);
-    }
+        // Načíst barvy palety
+        const paletteColorsResponse = await fetch("/api/palette-colors");
+        if (paletteColorsResponse.ok) {
+          const paletteColorsData = await paletteColorsResponse.json();
+          // Palette colors se používají v komponentách přímo, takže je uložíme do localStorage pro rychlý přístup
+          localStorage.setItem(
+            "paletteColors",
+            JSON.stringify(paletteColorsData)
+          );
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+        // Fallback na prázdné pole v případě chyby
+        setCombinations([]);
+        setVaseColors([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    setLoading(false);
+    loadData();
   }, []);
 
   const value: AppContextType = {
@@ -107,6 +101,7 @@ export function AppProvider({ children }: AppProviderProps) {
     setSelectedVaseColor,
     potColors,
     vaseColors,
+    setVaseColors,
     loading,
   };
 
