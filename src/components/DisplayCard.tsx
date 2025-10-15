@@ -1,3 +1,5 @@
+"use client";
+
 import BigColorDisplay from "./BigColorDisplay";
 import DisplayPot from "./DisplayPot";
 import DisplayVase from "./DisplayVase";

@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { HexColorPicker } from "react-colorful";
 import { useAppContext } from "../contexts/AppContext";
@@ -31,6 +33,10 @@ export default function ColorPicker({
   const { selectedVaseColor } = useAppContext();
 
   if (!showColorPicker) return null;
+
+  if (!selectedVaseColor) {
+    return <div>Loading...</div>;
+  }
 
   const getCurrentColor = () => {
     if (showColorPicker === "vase") {

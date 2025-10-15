@@ -1,7 +1,7 @@
 "use client";
 
-import { AppProvider } from "@/contexts/AppContext";
-import AppContent from "@/components/AppContent";
+import { AppProvider } from "../contexts/AppContext";
+import AppContent from "../components/AppContent";
 
 export default function Home() {
   return (

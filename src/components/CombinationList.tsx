@@ -1,5 +1,8 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "../contexts/AppContext";
+import AddCombinationSideover from "./AddCombinationSideover";
 
 interface ColorCombination {
   id: string;
@@ -23,9 +26,14 @@ export default function CombinationList({
   onCombinationSelect,
   onCombinationsChange,
 }: CombinationListProps) {
-  const { selectedProduct, combinations, setCombinations } = useAppContext();
+  const { selectedProduct, combinations, setCombinations, isAdmin } =
+    useAppContext();
   const [showAddForm, setShowAddForm] = useState(false);
   const [showSaveForm, setShowSaveForm] = useState(false);
+  const [isAddCombinationOpen, setIsAddCombinationOpen] = useState(false);
+  const [deletingCombination, setDeletingCombination] = useState<string | null>(
+    null
+  );
   const [newCombination, setNewCombination] = useState({
     miska: "",
     telo: "",
@@ -134,6 +142,62 @@ export default function CombinationList({
     localStorage.removeItem("colorCombinations");
   };
 
+  const handleDeleteCombination = async (combinationId: string) => {
+    if (!confirm("Opravdu chcete smazat tuto kombinaci?")) return;
+
+    setDeletingCombination(combinationId);
+    try {
+      const deleteResponse = await fetch(`/api/combinations/${combinationId}`, {
+        method: "DELETE",
+      });
+
+      if (deleteResponse.ok) {
+        // Aktualizovat lokální state
+        const updatedCombinations = combinations.filter(
+          (c: ColorCombination) => c.id !== combinationId
+        );
+        setCombinations(updatedCombinations);
+        // Pokud byla smazána vybraná kombinace, vybrat první dostupnou
+        if (selectedCombination.id === combinationId) {
+          const remainingCombinations = combinations.filter(
+            (c) => c.id !== combinationId
+          );
+          if (remainingCombinations.length > 0) {
+            onCombinationSelect(remainingCombinations[0]);
+          }
+        }
+      } else {
+        const errorData = await deleteResponse.json();
+        alert(
+          `Nepodařilo se smazat kombinaci: ${
+            errorData.error || "Neznámá chyba"
+          }`
+        );
+      }
+    } catch (error) {
+      console.error("Error deleting combination:", error);
+      alert("Nepodařilo se smazat kombinaci");
+    } finally {
+      setDeletingCombination(null);
+    }
+  };
+
+  const handleCombinationAdded = () => {
+    // Znovu načíst kombinace z API
+    const loadCombinations = async () => {
+      try {
+        const response = await fetch("/api/combinations");
+        if (response.ok) {
+          const data = await response.json();
+          setCombinations(data);
+        }
+      } catch (error) {
+        console.error("Error loading combinations:", error);
+      }
+    };
+    loadCombinations();
+  };
+
   const saveCurrentCombination = () => {
     // Kontrola, zda se aktuální kombinace liší od existujících
     const isExistingCombination = combinations.some(
@@ -196,12 +260,22 @@ export default function CombinationList({
           Dostupné kombinace
         </h2>
         <div className="flex space-x-2">
-          <button
-            onClick={handleShowAddForm}
-            className="px-3 py-1 text-sm text-white bg-green-500 rounded-lg transition-colors hover:bg-green-600"
-          >
-            {showAddForm ? "Zrušit" : "+ Přidat"}
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setIsAddCombinationOpen(true)}
+              className="px-3 py-1 text-sm text-white bg-green-500 rounded-lg transition-colors hover:bg-green-600"
+            >
+              + Přidat kombinaci
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              onClick={handleShowAddForm}
+              className="px-3 py-1 text-sm text-white bg-blue-500 rounded-lg transition-colors hover:bg-blue-600"
+            >
+              {showAddForm ? "Zrušit" : "Uložit aktuální"}
+            </button>
+          )}
           <button
             onClick={resetToDefault}
             className="px-3 py-1 text-sm text-white bg-gray-500 rounded-lg transition-colors hover:bg-gray-600"
@@ -212,7 +286,7 @@ export default function CombinationList({
       </div>
 
       {/* Formulář pro novou kombinaci */}
-      {showAddForm && (
+      {showAddForm && isAdmin && (
         <div className="p-4 mb-4 bg-white rounded-lg border-2 border-green-200">
           <h3 className="mb-3 font-medium text-gray-800">Nová kombinace</h3>
           <div className="space-y-3">
@@ -293,7 +367,7 @@ export default function CombinationList({
       )}
 
       {/* Formulář pro uložení aktuální kombinace */}
-      {showSaveForm && (
+      {showSaveForm && isAdmin && (
         <div className="p-4 mb-4 bg-white rounded-lg border-2 border-blue-200">
           <h3 className="mb-3 font-medium text-gray-800">
             Uložit aktuální kombinaci
@@ -370,16 +444,26 @@ export default function CombinationList({
                   {combo.miska} + {combo.telo}
                 </p>
               </div>
-              <button
-                onClick={() => deleteCombination(combo.id)}
-                className="px-2 py-1 text-xs text-white bg-red-500 rounded transition-colors hover:bg-red-600"
-              >
-                ✕
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => handleDeleteCombination(combo.id)}
+                  className="px-2 py-1 text-xs text-white bg-red-500 rounded transition-colors hover:bg-red-600 disabled:opacity-50"
+                  title="Smazat kombinaci"
+                  disabled={deletingCombination === combo.id}
+                >
+                  {deletingCombination === combo.id ? "..." : "✕"}
+                </button>
+              )}
             </div>
           </div>
         ))}
       </div>
+
+      <AddCombinationSideover
+        isOpen={isAddCombinationOpen}
+        onClose={() => setIsAddCombinationOpen(false)}
+        onCombinationAdded={handleCombinationAdded}
+      />
     </div>
   );
 }

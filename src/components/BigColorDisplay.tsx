@@ -1,5 +1,6 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
-import { ColorCombination } from "../App";
 import { useAppContext } from "../contexts/AppContext";
 import { ColorPaletteItem } from "../lib/colorPalette";
 
