@@ -1,52 +1,94 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
-import { ColorCombination } from "../App";
+"use client";
 
-interface VaseColor {
-  id: string;
-  name: string;
-  hex: string;
-  rgb: [number, number, number];
-  description: string;
-}
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from "react";
+import { ColorCombination, VaseColor } from "../types";
 
 interface AppContextType {
-  selectedCombination: ColorCombination;
+  selectedCombination: ColorCombination | null;
   setSelectedCombination: (combination: ColorCombination) => void;
   selectedProduct: "pot" | "vase";
   setSelectedProduct: (product: "pot" | "vase") => void;
   combinations: ColorCombination[];
   setCombinations: (combinations: ColorCombination[]) => void;
-  selectedVaseColor: VaseColor;
+  selectedVaseColor: VaseColor | null;
   setSelectedVaseColor: (color: VaseColor) => void;
+  potColors: any[];
+  vaseColors: VaseColor[];
+  setVaseColors: (colors: VaseColor[]) => void;
+  loading: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 interface AppProviderProps {
   children: ReactNode;
-  initialCombinations: ColorCombination[];
 }
 
-export function AppProvider({
-  children,
-  initialCombinations,
-}: AppProviderProps) {
-  const [combinations, setCombinations] =
-    useState<ColorCombination[]>(initialCombinations);
+export function AppProvider({ children }: AppProviderProps) {
   const [selectedCombination, setSelectedCombination] =
-    useState<ColorCombination>(initialCombinations[0]);
+    useState<ColorCombination | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<"pot" | "vase">("pot");
+  const [combinations, setCombinations] = useState<ColorCombination[]>([]);
+  const [selectedVaseColor, setSelectedVaseColor] = useState<VaseColor | null>(
+    null
+  );
+  const [potColors, setPotColors] = useState<any[]>([]);
+  const [vaseColors, setVaseColors] = useState<VaseColor[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Výchozí barva vázy
-  const initialVaseColor: VaseColor = {
-    id: "1",
-    name: "Klasická Bílá",
-    hex: "#FFFFFF",
-    rgb: [255, 255, 255],
-    description: "Čistá bílá pro minimalistický vzhled",
-  };
-  const [selectedVaseColor, setSelectedVaseColor] =
-    useState<VaseColor>(initialVaseColor);
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+
+        // Načíst kombinace barev
+        const combinationsResponse = await fetch("/api/combinations");
+        if (combinationsResponse.ok) {
+          const combinationsData = await combinationsResponse.json();
+          setCombinations(combinationsData);
+          if (combinationsData.length > 0) {
+            setSelectedCombination(combinationsData[0]);
+          }
+        }
+
+        // Načíst barvy váží
+        const vaseColorsResponse = await fetch("/api/vase-colors");
+        if (vaseColorsResponse.ok) {
+          const vaseColorsData = await vaseColorsResponse.json();
+          setVaseColors(vaseColorsData);
+          if (vaseColorsData.length > 0) {
+            setSelectedVaseColor(vaseColorsData[0]);
+          }
+        }
+
+        // Načíst barvy palety
+        const paletteColorsResponse = await fetch("/api/palette-colors");
+        if (paletteColorsResponse.ok) {
+          const paletteColorsData = await paletteColorsResponse.json();
+          // Palette colors se používají v komponentách přímo, takže je uložíme do localStorage pro rychlý přístup
+          localStorage.setItem(
+            "paletteColors",
+            JSON.stringify(paletteColorsData)
+          );
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+        // Fallback na prázdné pole v případě chyby
+        setCombinations([]);
+        setVaseColors([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   const value: AppContextType = {
     selectedCombination,
@@ -57,6 +99,10 @@ export function AppProvider({
     setCombinations,
     selectedVaseColor,
     setSelectedVaseColor,
+    potColors,
+    vaseColors,
+    setVaseColors,
+    loading,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

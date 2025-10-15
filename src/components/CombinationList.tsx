@@ -18,96 +18,12 @@ interface CombinationListProps {
   onCombinationsChange: (combinations: ColorCombination[]) => void;
 }
 
-const initialCombinations: ColorCombination[] = [
-  {
-    id: "1",
-    miska: "Mramorová",
-    telo: "Hluboká Tmavě Zelená (Jedlová)",
-    hexMiska: "#D3D3D3",
-    hexTelo: "#003E33",
-    rgbMiska: [211, 211, 211],
-    rgbTelo: [0, 62, 51],
-    tema: "Elegance Lesa",
-  },
-  {
-    id: "2",
-    miska: "Mramorová",
-    telo: "Spálená Oranžová / Terakota",
-    hexMiska: "#D3D3D3",
-    hexTelo: "#CC5500",
-    rgbMiska: [211, 211, 211],
-    rgbTelo: [204, 85, 0],
-    tema: "Klasický Podzim",
-  },
-  {
-    id: "3",
-    miska: "Třpytivá Hnědá",
-    telo: "Krémová / Světle Béžová",
-    hexMiska: "#694931",
-    hexTelo: "#F5F5DC",
-    rgbMiska: [105, 73, 49],
-    rgbTelo: [245, 245, 220],
-    tema: "Teplý Kontrast",
-  },
-  {
-    id: "4",
-    miska: "Třpytivá Hnědá",
-    telo: "Matná Hořčicová",
-    hexMiska: "#694931",
-    hexTelo: "#D4A017",
-    rgbMiska: [105, 73, 49],
-    rgbTelo: [212, 160, 23],
-    tema: "Zlatý List",
-  },
-  {
-    id: "5",
-    miska: "Spálená Oranžová / Rezavá",
-    telo: "Hluboká Petrolejová Zelená",
-    hexMiska: "#B85C38",
-    hexTelo: "#004D40",
-    rgbMiska: [184, 92, 56],
-    rgbTelo: [0, 77, 64],
-    tema: "Dýňový Latté",
-  },
-  {
-    id: "6",
-    miska: "Sytá Bordó / Vínová",
-    telo: "Studená Tmavě Šedá (Antracit)",
-    hexMiska: "#800020",
-    hexTelo: "#36454F",
-    rgbMiska: [128, 0, 32],
-    rgbTelo: [54, 69, 79],
-    tema: "Šedý Vřes",
-  },
-  {
-    id: "7",
-    miska: "Hořčicově Žlutá / Okrová",
-    telo: "Uhlově Černá (Matná)",
-    hexMiska: "#E3BC3F",
-    hexTelo: "#222222",
-    rgbMiska: [227, 188, 63],
-    rgbTelo: [34, 34, 34],
-    tema: "Moderní Energická",
-  },
-  {
-    id: "8",
-    miska: "Zlatá / Měděná Metalíza",
-    telo: "Tmavá Švestková / Fialová",
-    hexMiska: "#B87333",
-    hexTelo: "#5F456E",
-    rgbMiska: [184, 115, 51],
-    rgbTelo: [95, 69, 110],
-    tema: "Královský Kov",
-  },
-];
-
 export default function CombinationList({
   selectedCombination,
   onCombinationSelect,
   onCombinationsChange,
 }: CombinationListProps) {
-  const [combinations, setCombinations] =
-    useState<ColorCombination[]>(initialCombinations);
+  const { selectedProduct, combinations, setCombinations } = useAppContext();
   const [showAddForm, setShowAddForm] = useState(false);
   const [showSaveForm, setShowSaveForm] = useState(false);
   const [newCombination, setNewCombination] = useState({
@@ -118,8 +34,6 @@ export default function CombinationList({
     tema: "",
   });
   const [saveCombinationName, setSaveCombinationName] = useState("");
-
-  const { selectedProduct } = useAppContext();
 
   // Nastavení barev nové kombinace na aktuálně vybrané při otevření formuláře
   const handleShowAddForm = () => {
@@ -215,21 +129,21 @@ export default function CombinationList({
   };
 
   const resetToDefault = () => {
-    setCombinations(initialCombinations);
-    onCombinationSelect(initialCombinations[0]);
+    // Reset na prázdné pole - kombinace se načtou z databáze
+    setCombinations([]);
     localStorage.removeItem("colorCombinations");
   };
 
   const saveCurrentCombination = () => {
-    // Kontrola, zda se aktuální kombinace liší od původních defaultních
-    const isDefaultCombination = initialCombinations.some(
-      (defaultCombo) =>
-        defaultCombo.hexMiska === selectedCombination.hexMiska &&
-        defaultCombo.hexTelo === selectedCombination.hexTelo
+    // Kontrola, zda se aktuální kombinace liší od existujících
+    const isExistingCombination = combinations.some(
+      (existingCombo) =>
+        existingCombo.hexMiska === selectedCombination.hexMiska &&
+        existingCombo.hexTelo === selectedCombination.hexTelo
     );
 
-    if (isDefaultCombination) {
-      alert("Tato kombinace je již mezi defaultními kombinacemi!");
+    if (isExistingCombination) {
+      alert("Tato kombinace již existuje!");
       return;
     }
 
