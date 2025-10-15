@@ -1,7 +1,13 @@
+"use client";
+
 import { useAppContext } from "../contexts/AppContext";
 
 export default function DisplayVase() {
   const { selectedVaseColor } = useAppContext();
+
+  if (!selectedVaseColor) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="relative w-[800px] h-[400px]">

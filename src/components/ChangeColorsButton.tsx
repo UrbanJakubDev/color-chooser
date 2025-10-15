@@ -1,4 +1,6 @@
-import { ColorCombination } from "../App";
+"use client";
+
+import { ColorCombination } from "../types";
 import { useAppContext } from "../contexts/AppContext";
 
 export default function ChangeColorsButton({

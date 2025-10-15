@@ -8,6 +8,7 @@ import React, {
   useEffect,
 } from "react";
 import { ColorCombination, VaseColor } from "../types";
+import { useSession } from "next-auth/react";
 
 interface AppContextType {
   selectedCombination: ColorCombination | null;
@@ -22,6 +23,8 @@ interface AppContextType {
   vaseColors: VaseColor[];
   setVaseColors: (colors: VaseColor[]) => void;
   loading: boolean;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -31,6 +34,7 @@ interface AppProviderProps {
 }
 
 export function AppProvider({ children }: AppProviderProps) {
+  const { data: session, status } = useSession();
   const [selectedCombination, setSelectedCombination] =
     useState<ColorCombination | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<"pot" | "vase">("pot");
@@ -41,6 +45,9 @@ export function AppProvider({ children }: AppProviderProps) {
   const [potColors, setPotColors] = useState<any[]>([]);
   const [vaseColors, setVaseColors] = useState<VaseColor[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const isAuthenticated = !!session;
+  const isAdmin = (session?.user as any)?.role === "admin";
 
   useEffect(() => {
     const loadData = async () => {
@@ -103,6 +110,8 @@ export function AppProvider({ children }: AppProviderProps) {
     vaseColors,
     setVaseColors,
     loading,
+    isAuthenticated,
+    isAdmin,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState } from "react";
 import ColourPallete from "./ColourPallete";
 import CombinationList from "./CombinationList";
@@ -8,6 +7,7 @@ import ProductSwitch from "./ProductSwitch";
 import DisplayCard from "./DisplayCard";
 import { useAppContext } from "../contexts/AppContext";
 import ChangeColorsButton from "./ChangeColorsButton";
+import Footer from "./Footer";
 
 export default function AppContent() {
   const {
@@ -108,8 +108,8 @@ export default function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container px-4 py-8 mx-auto">
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <div className="container flex-1 px-4 py-8 mx-auto">
         <h1 className="mb-4 text-4xl font-bold text-center text-gray-800">
           🎨 Color Chooser - Kombinace barev
         </h1>
@@ -118,23 +118,27 @@ export default function AppContent() {
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
           {/* Seznam kombinací/barev podle produktu */}
-          {selectedProduct === "pot" ? (
+          {selectedProduct === "pot" && selectedCombination ? (
             <CombinationList
               selectedCombination={selectedCombination}
               onCombinationSelect={setSelectedCombination}
               onCombinationsChange={setCombinations}
             />
-          ) : (
+          ) : selectedProduct === "vase" && selectedVaseColor ? (
             <VaseColorList
               selectedVaseColor={selectedVaseColor}
               onVaseColorSelect={setSelectedVaseColor}
             />
+          ) : (
+            <div className="p-6 bg-white rounded-xl shadow-lg">
+              <p className="text-gray-500">Načítání...</p>
+            </div>
           )}
 
           {/* Hlavní vizualizační karta */}
           <div className="lg:col-span-2">
             {/* Tlačítko pro prohození barev se zobrazuje pouze pro květináče */}
-            {selectedProduct === "pot" && (
+            {selectedProduct === "pot" && selectedCombination && (
               <ChangeColorsButton
                 selectedCombination={selectedCombination}
                 swapColors={swapColors}
@@ -157,6 +161,8 @@ export default function AppContent() {
           />
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

@@ -1,10 +1,24 @@
 import { PrismaClient } from "@prisma/client";
 import { colorPalette } from "../src/lib/colorPalette";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("🌱 Starting database seed...");
+
+  // Seed Admin User
+  const hashedPassword = await bcrypt.hash("admin123", 10);
+  await prisma.user.upsert({
+    where: { username: "admin" },
+    update: {},
+    create: {
+      username: "admin",
+      password: hashedPassword,
+      role: "admin",
+    },
+  });
+  console.log("✅ Admin user created (username: admin, password: admin123)");
 
   // Seed Color Combinations
   const combinations = [

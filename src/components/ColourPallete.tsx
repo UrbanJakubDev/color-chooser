@@ -1,5 +1,9 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
 import { ColorPaletteItem } from "../lib/colorPalette";
+import { useAppContext } from "../contexts/AppContext";
+import AddColorSideover from "./AddColorSideover";
 
 export default function ColourPallete({
   selectedProduct,
@@ -10,7 +14,10 @@ export default function ColourPallete({
   handleDragStart: (color: string) => void;
   handleDragEnd: () => void;
 }) {
+  const { isAdmin } = useAppContext();
   const [colorPalette, setColorPalette] = useState<ColorPaletteItem[]>([]);
+  const [isAddColorOpen, setIsAddColorOpen] = useState(false);
+  const [deletingColor, setDeletingColor] = useState<string | null>(null);
 
   useEffect(() => {
     // Načíst barvy palety z localStorage (které se načte z API v AppContext)
@@ -57,31 +64,108 @@ export default function ColourPallete({
       setColorPalette(fallbackPalette);
     }
   }, []);
+
+  const handleDeleteColor = async (colorHex: string) => {
+    if (!confirm("Opravdu chcete smazat tuto barvu?")) return;
+
+    setDeletingColor(colorHex);
+    try {
+      // Najít ID barvy podle hex
+      const response = await fetch("/api/palette-colors");
+      const colors = await response.json();
+      const colorToDelete = colors.find((c: any) => c.hex === colorHex);
+
+      if (colorToDelete) {
+        const deleteResponse = await fetch(
+          `/api/palette-colors/${colorToDelete.id}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        if (deleteResponse.ok) {
+          // Aktualizovat lokální state
+          setColorPalette((prev) => prev.filter((c) => c.hex !== colorHex));
+          // Aktualizovat localStorage
+          localStorage.setItem(
+            "paletteColors",
+            JSON.stringify(colorPalette.filter((c) => c.hex !== colorHex))
+          );
+        } else {
+          const errorData = await deleteResponse.json();
+          alert(
+            `Nepodařilo se smazat barvu: ${errorData.error || "Neznámá chyba"}`
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting color:", error);
+      alert("Nepodařilo se smazat barvu");
+    } finally {
+      setDeletingColor(null);
+    }
+  };
+
+  const handleColorAdded = () => {
+    // Znovu načíst barvy z localStorage
+    const storedPalette = localStorage.getItem("paletteColors");
+    if (storedPalette) {
+      setColorPalette(JSON.parse(storedPalette));
+    }
+  };
   return (
     <div className="p-6 mb-6 bg-white rounded-xl shadow-lg lg:col-span-1">
-      <h3 className="mb-4 text-lg font-medium text-gray-700">
-        🎨 Paleta barev - Přetáhněte barvu na{" "}
-        {selectedProduct === "pot"
-          ? "misku nebo tělo"
-          : "spodní nebo horní část"}
-      </h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium text-gray-700">
+          🎨 Paleta barev - Přetáhněte barvu na{" "}
+          {selectedProduct === "pot"
+            ? "misku nebo tělo"
+            : "spodní nebo horní část"}
+        </h3>
+        {isAdmin && (
+          <button
+            onClick={() => setIsAddColorOpen(true)}
+            className="px-3 py-1 text-sm text-white bg-green-500 rounded-lg transition-colors hover:bg-green-600"
+          >
+            + Přidat barvu
+          </button>
+        )}
+      </div>
+
       <div className="grid grid-cols-3 gap-3">
         {colorPalette.map((color) => (
-          <div
-            key={color.hex}
-            className="w-16 h-16 rounded-lg border-2 border-white shadow-sm transition-transform cursor-grab hover:scale-110"
-            style={{ backgroundColor: color.hex }}
-            draggable
-            onDragStart={() => handleDragStart(color.hex)}
-            onDragEnd={handleDragEnd}
-            title={`${color.name} (${color.hex}) - Přetáhněte na ${
-              selectedProduct === "pot"
-                ? "misku nebo tělo"
-                : "spodní nebo horní část"
-            }`}
-          ></div>
+          <div key={color.hex} className="relative group">
+            <div
+              className="w-16 h-16 rounded-lg border-2 border-white shadow-sm transition-transform cursor-grab hover:scale-110"
+              style={{ backgroundColor: color.hex }}
+              draggable
+              onDragStart={() => handleDragStart(color.hex)}
+              onDragEnd={handleDragEnd}
+              title={`${color.name} (${color.hex}) - Přetáhněte na ${
+                selectedProduct === "pot"
+                  ? "misku nebo tělo"
+                  : "spodní nebo horní část"
+              }`}
+            ></div>
+            {isAdmin && (
+              <button
+                onClick={() => handleDeleteColor(color.hex)}
+                className="absolute -top-2 -right-2 w-6 h-6 text-xs text-white bg-red-500 rounded-full opacity-0 transition-colors hover:bg-red-600 group-hover:opacity-100 disabled:opacity-50"
+                title="Smazat barvu"
+                disabled={deletingColor === color.hex}
+              >
+                {deletingColor === color.hex ? "..." : "×"}
+              </button>
+            )}
+          </div>
         ))}
       </div>
+
+      <AddColorSideover
+        isOpen={isAddColorOpen}
+        onClose={() => setIsAddColorOpen(false)}
+        onColorAdded={handleColorAdded}
+      />
     </div>
   );
 }

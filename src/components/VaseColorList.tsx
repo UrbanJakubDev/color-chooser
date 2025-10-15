@@ -1,5 +1,8 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "../contexts/AppContext";
+import AddVaseColorSideover from "./AddVaseColorSideover";
 
 interface VaseColor {
   id: string;
@@ -18,8 +21,12 @@ export default function VaseColorList({
   selectedVaseColor,
   onVaseColorSelect,
 }: VaseColorListProps) {
-  const { vaseColors, setVaseColors } = useAppContext();
+  const { vaseColors, setVaseColors, isAdmin } = useAppContext();
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isAddVaseColorOpen, setIsAddVaseColorOpen] = useState(false);
+  const [deletingVaseColor, setDeletingVaseColor] = useState<string | null>(
+    null
+  );
   const [newColor, setNewColor] = useState({
     name: "",
     hex: "#FFFFFF",
@@ -107,6 +114,62 @@ export default function VaseColorList({
     localStorage.removeItem("vaseColors");
   };
 
+  const handleDeleteVaseColor = async (vaseColorId: string) => {
+    if (!confirm("Opravdu chcete smazat tuto barvu vázy?")) return;
+
+    setDeletingVaseColor(vaseColorId);
+    try {
+      const deleteResponse = await fetch(`/api/vase-colors/${vaseColorId}`, {
+        method: "DELETE",
+      });
+
+      if (deleteResponse.ok) {
+        // Aktualizovat lokální state
+        const updatedVaseColors = vaseColors.filter(
+          (c: VaseColor) => c.id !== vaseColorId
+        );
+        setVaseColors(updatedVaseColors);
+        // Pokud byla smazána vybraná barva, vybrat první dostupnou
+        if (selectedVaseColor.id === vaseColorId) {
+          const remainingColors = vaseColors.filter(
+            (c) => c.id !== vaseColorId
+          );
+          if (remainingColors.length > 0) {
+            onVaseColorSelect(remainingColors[0]);
+          }
+        }
+      } else {
+        const errorData = await deleteResponse.json();
+        alert(
+          `Nepodařilo se smazat barvu vázy: ${
+            errorData.error || "Neznámá chyba"
+          }`
+        );
+      }
+    } catch (error) {
+      console.error("Error deleting vase color:", error);
+      alert("Nepodařilo se smazat barvu vázy");
+    } finally {
+      setDeletingVaseColor(null);
+    }
+  };
+
+  const handleVaseColorAdded = () => {
+    // Znovu načíst barvy váží z API
+    const loadVaseColors = async () => {
+      try {
+        const response = await fetch("/api/vase-colors");
+        if (response.ok) {
+          const data = await response.json();
+          setVaseColors(data);
+        }
+      } catch (error) {
+        console.error("Error loading vase colors:", error);
+      }
+    };
+    loadVaseColors();
+  };
+
   return (
     <div className="lg:col-span-1">
       <div className="flex justify-between items-center mb-4">
@@ -114,12 +177,22 @@ export default function VaseColorList({
           Dostupné barvy vázy
         </h2>
         <div className="flex space-x-2">
-          <button
-            onClick={handleShowAddForm}
-            className="px-3 py-1 text-sm text-white bg-green-500 rounded-lg transition-colors hover:bg-green-600"
-          >
-            {showAddForm ? "Zrušit" : "+ Přidat"}
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setIsAddVaseColorOpen(true)}
+              className="px-3 py-1 text-sm text-white bg-green-500 rounded-lg transition-colors hover:bg-green-600"
+            >
+              + Přidat barvu vázy
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              onClick={handleShowAddForm}
+              className="px-3 py-1 text-sm text-white bg-blue-500 rounded-lg transition-colors hover:bg-blue-600"
+            >
+              {showAddForm ? "Zrušit" : "Uložit aktuální"}
+            </button>
+          )}
           <button
             onClick={resetToDefault}
             className="px-3 py-1 text-sm text-white bg-gray-500 rounded-lg transition-colors hover:bg-gray-600"
@@ -130,7 +203,7 @@ export default function VaseColorList({
       </div>
 
       {/* Formulář pro novou barvu */}
-      {showAddForm && (
+      {showAddForm && isAdmin && (
         <div className="p-4 mb-4 bg-white rounded-lg border-2 border-green-200">
           <h3 className="mb-3 font-medium text-gray-800">Nová barva</h3>
           <div className="space-y-3">
@@ -200,19 +273,29 @@ export default function VaseColorList({
                 <p className="text-sm text-gray-600">{color.description}</p>
                 <p className="font-mono text-xs text-gray-500">{color.hex}</p>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteColor(color.id);
-                }}
-                className="px-2 py-1 text-xs text-white bg-red-500 rounded transition-colors hover:bg-red-600"
-              >
-                ✕
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteVaseColor(color.id);
+                  }}
+                  className="px-2 py-1 text-xs text-white bg-red-500 rounded transition-colors hover:bg-red-600 disabled:opacity-50"
+                  title="Smazat barvu vázy"
+                  disabled={deletingVaseColor === color.id}
+                >
+                  {deletingVaseColor === color.id ? "..." : "✕"}
+                </button>
+              )}
             </div>
           </div>
         ))}
       </div>
+
+      <AddVaseColorSideover
+        isOpen={isAddVaseColorOpen}
+        onClose={() => setIsAddVaseColorOpen(false)}
+        onVaseColorAdded={handleVaseColorAdded}
+      />
     </div>
   );
 }
