@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { requireAdmin } from "../../../lib/auth";
 
 const prisma = new PrismaClient();
 
@@ -33,6 +34,15 @@ export async function GET() {
 // POST /api/vase-colors - Vytvořit novou barvu vázy
 export async function POST(request: NextRequest) {
   try {
+    // Check admin authentication
+    const authResult = await requireAdmin(request);
+    if ("error" in authResult) {
+      return NextResponse.json(
+        { error: authResult.error },
+        { status: authResult.status }
+      );
+    }
+
     const body = await request.json();
     const { name, hex, rgb, description } = body;
 

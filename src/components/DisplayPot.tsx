@@ -1,7 +1,13 @@
+"use client";
+
 import { useAppContext } from "../contexts/AppContext";
 
 export default function DisplayPot() {
   const { selectedCombination } = useAppContext();
+
+  if (!selectedCombination) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="relative w-[800px] h-[400px]">

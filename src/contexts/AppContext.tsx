@@ -7,21 +7,24 @@ import React, {
   ReactNode,
   useEffect,
 } from "react";
-import { ColorCombination, VaseColor } from "../types";
+import { LegacyColorCombination, LegacyVaseColor } from "../types";
+import { useSession } from "next-auth/react";
 
 interface AppContextType {
-  selectedCombination: ColorCombination | null;
-  setSelectedCombination: (combination: ColorCombination) => void;
+  selectedCombination: LegacyColorCombination | null;
+  setSelectedCombination: (combination: LegacyColorCombination) => void;
   selectedProduct: "pot" | "vase";
   setSelectedProduct: (product: "pot" | "vase") => void;
-  combinations: ColorCombination[];
-  setCombinations: (combinations: ColorCombination[]) => void;
-  selectedVaseColor: VaseColor | null;
-  setSelectedVaseColor: (color: VaseColor) => void;
+  combinations: LegacyColorCombination[];
+  setCombinations: (combinations: LegacyColorCombination[]) => void;
+  selectedVaseColor: LegacyVaseColor | null;
+  setSelectedVaseColor: (color: LegacyVaseColor) => void;
   potColors: any[];
-  vaseColors: VaseColor[];
-  setVaseColors: (colors: VaseColor[]) => void;
+  vaseColors: LegacyVaseColor[];
+  setVaseColors: (colors: LegacyVaseColor[]) => void;
   loading: boolean;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -31,16 +34,21 @@ interface AppProviderProps {
 }
 
 export function AppProvider({ children }: AppProviderProps) {
+  const { data: session, status } = useSession();
   const [selectedCombination, setSelectedCombination] =
-    useState<ColorCombination | null>(null);
+    useState<LegacyColorCombination | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<"pot" | "vase">("pot");
-  const [combinations, setCombinations] = useState<ColorCombination[]>([]);
-  const [selectedVaseColor, setSelectedVaseColor] = useState<VaseColor | null>(
-    null
+  const [combinations, setCombinations] = useState<LegacyColorCombination[]>(
+    []
   );
+  const [selectedVaseColor, setSelectedVaseColor] =
+    useState<LegacyVaseColor | null>(null);
   const [potColors, setPotColors] = useState<any[]>([]);
-  const [vaseColors, setVaseColors] = useState<VaseColor[]>([]);
+  const [vaseColors, setVaseColors] = useState<LegacyVaseColor[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const isAuthenticated = !!session;
+  const isAdmin = (session?.user as any)?.role === "admin";
 
   useEffect(() => {
     const loadData = async () => {
@@ -103,6 +111,8 @@ export function AppProvider({ children }: AppProviderProps) {
     vaseColors,
     setVaseColors,
     loading,
+    isAuthenticated,
+    isAdmin,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
