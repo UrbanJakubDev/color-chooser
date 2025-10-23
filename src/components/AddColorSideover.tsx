@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { HexColorPicker } from "react-colorful";
 import Toast, { useToast } from "./Toast";
+import { trpc } from "@/lib/trpc";
 
 interface AddColorSideoverProps {
   isOpen: boolean;
@@ -15,13 +16,28 @@ export default function AddColorSideover({
 }: AddColorSideoverProps) {
   const [name, setName] = useState("");
   const [color, setColor] = useState("#3B82F6");
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const { toast, showToast, hideToast } = useToast();
 
+  // tRPC mutations and utils
+  const createColorMutation = trpc.paletteColor.create.useMutation({
+    onSuccess: () => {
+      onColorAdded();
+      onClose();
+      setName("");
+      setColor("#3B82F6");
+      setError("");
+      showToast("Barva byla úspěšně přidána!", "success");
+    },
+    onError: (error) => {
+      setError(error.message || "Došlo k chybě při přidávání barvy");
+    },
+  });
+
+  const utils = trpc.useUtils();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError("");
 
     try {
@@ -30,43 +46,22 @@ export default function AddColorSideover({
         throw new Error("Neplatný hex kód barvy");
       }
 
-      // Kontrola duplicit
-      const checkResponse = await fetch("/api/palette-colors");
-      if (checkResponse.ok) {
-        const existingColors = await checkResponse.json();
-        const isDuplicate = existingColors.some(
-          (c: any) => c.hex.toLowerCase() === color.toLowerCase()
-        );
-        if (isDuplicate) {
-          throw new Error("Barva s tímto hex kódem již existuje");
-        }
+      // Kontrola duplicit pomocí tRPC utils
+      const existingColors = await utils.paletteColor.getAll.fetch();
+      const isDuplicate = existingColors.some(
+        (c: { hex: string }) => c.hex.toLowerCase() === color.toLowerCase()
+      );
+      if (isDuplicate) {
+        throw new Error("Barva s tímto hex kódem již existuje");
       }
 
-      const response = await fetch("/api/palette-colors", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          hex: color,
-        }),
+      // Vytvořit barvu pomocí tRPC mutation
+      await createColorMutation.mutateAsync({
+        name,
+        hex: color,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Nepodařilo se přidat barvu");
-      }
-
-      onColorAdded();
-      onClose();
-      setName("");
-      setColor("#3B82F6");
-      showToast("Barva byla úspěšně přidána!", "success");
     } catch (error: any) {
       setError(error.message || "Došlo k chybě při přidávání barvy");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -135,10 +130,10 @@ export default function AddColorSideover({
             </button>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={createColorMutation.isPending}
               className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
-              {isLoading ? "Přidávání..." : "Přidat barvu"}
+              {createColorMutation.isPending ? "Přidávání..." : "Přidat barvu"}
             </button>
           </div>
         </form>
