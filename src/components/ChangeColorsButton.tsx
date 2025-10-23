@@ -1,13 +1,13 @@
 "use client";
 
-import { ColorCombination } from "../types";
+import { LegacyColorCombination } from "../types";
 import { useAppContext } from "../contexts/AppContext";
 
 export default function ChangeColorsButton({
   selectedCombination,
   swapColors,
 }: {
-  selectedCombination: ColorCombination;
+  selectedCombination: LegacyColorCombination;
   swapColors: () => void;
 }) {
   const { selectedProduct } = useAppContext();
